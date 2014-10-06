@@ -25,11 +25,19 @@ t.test(subset(subset(simdata,useVocalTract==0),generation==100)$medPerFitness,su
 t.test(subset(subset(simdata,useVocalTract==0),generation==500)$medProFitness,subset(subset(simdata,useVocalTract==1),generation==500)$medProFitness)
 t.test(subset(subset(simdata,useVocalTract==0),generation==500)$medPerFitness,subset(subset(simdata,useVocalTract==1),generation==500)$medPerFitness)
 
-proFitModel = lmer(medProFitnessScaled~(1|runfolder)+useVocalTract+generationScaled+useVocalTract*generationScaled,data=subset(simdata,generation<=100))
-summary(proFitModel)
+aggdataPro = aggregate(medProFitness~runfolder+useVocalTract,subset(simdata,generation>25 & generation < 150),mean)
+t.test(subset(aggdataPro,useVocalTract==0)$medProFitness,subset(aggdataPro,useVocalTract==1)$medProFitness)
 
-perFitModel = lmer(medPerFitnessScaled~(1|runfolder)+useVocalTract+generationScaled+useVocalTract*generationScaled,data=subset(simdata,generation<=100))
+aggdataPer = aggregate(medPerFitness~runfolder+useVocalTract,subset(simdata,generation>25 & generation < 150),mean)
+t.test(subset(aggdataPer,useVocalTract==0)$medPerFitness,subset(aggdataPer,useVocalTract==1)$medPerFitness)
+
+proFitModel = lmer(medProFitnessScaled~(1|runfolder)+useVocalTract+generationScaled+useVocalTract*generationScaled,data=subset(simdata,generation<=100 & generation > 50))
+summary(proFitModel)
+quartz(); qqnorm(resid(proFitModel))
+
+perFitModel = lmer(medPerFitnessScaled~(1|runfolder)+useVocalTract+generationScaled+useVocalTract*generationScaled,data=subset(simdata,generation<=100 & generation > 50))
 summary(perFitModel)
+quartz(); qqnorm(resid(perFitModel))
 
 var.test(subset(subset(simdata,useVocalTract==0),generation==100)$medProFitness,subset(subset(simdata,useVocalTract==1),generation==100)$medProFitness)
 var.test(subset(subset(simdata,useVocalTract==0),generation==100)$medPerFitness,subset(subset(simdata,useVocalTract==1),generation==100)$medPerFitness)
