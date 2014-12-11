@@ -1,7 +1,7 @@
 function [] = genesOverTime(runsFolder,workspaceFolder,numgens,varargin)
 
 % Plot the Nth most fit (i.e the constantRank) individual's genes over the course of numgens generations of evolution.
-% Example: genesOverTime('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/ExtremeWeightsExp/','run_capWeights_1/',500,'constantRank',50);
+% Example: genesOverTime('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/Abstract_CapWeights/','run1/',400,'constantRank',50);
 %
 % Anne S. Warlaumont
 

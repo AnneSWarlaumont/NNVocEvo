@@ -1,4 +1,4 @@
-function [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds)
+function [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq)
 
 % Anne S. Warlaumont
 
@@ -64,7 +64,7 @@ for signalNum = 1:numSignals
         
         % Get information about this vocalization
         [sounds{signalNum},samplingRate] = audioread(vocalizationFilenames{signalNum});
-        [~,aspectra{signalNum},~]=melfcc(sounds{signalNum},samplingRate,'minfreq',20,'maxfreq',2000,'wintime',melfcc_wintime,'nbands',melfcc_nbands,'hoptime',melfcc_hoptime); 
+        [~,aspectra{signalNum},~]=melfcc(sounds{signalNum},samplingRate,'minfreq',20,'maxfreq',maxFreq,'wintime',melfcc_wintime,'nbands',melfcc_nbands,'hoptime',melfcc_hoptime); 
         aspectra{signalNum} = (aspectra{signalNum})/.5e12; % used in the actual runs
         plot_aspectrum = sqrt(sqrt(aspectra{signalNum})); % used for plotting for paper
         caxisBounds = [0,1];
@@ -93,7 +93,7 @@ for signalNum = 1:numSignals
         startTimeBin = 0;
         
         % Get this perceiver parent's outputs:
-        perceiverNetInputs = reshape(aspectra{signalNum},size(aspectra{signalNum},1)*size(aspectra{signalNum},2),1);
+        perceiverNetInputs = reshape(aspectra{signalNum},size(aspectra{signalNum},1)*size(aspectra{signalNum},2),1)+noiseAmnt*rand(size(aspectra{signalNum},1)*size(aspectra{signalNum},2),1);
         perceiverTarget = perceiverTargets(signalNum,:);
         perceiverNetHidden = tanh(perceiverNetInputs'*perceiverNetWeightsIH);
         perceiverNetOutput = satlin(perceiverNetHidden*perceiverNetWeightsHO);

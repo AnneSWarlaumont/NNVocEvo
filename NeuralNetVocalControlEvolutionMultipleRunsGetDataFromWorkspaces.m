@@ -1,4 +1,4 @@
-function [] = NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces(runsFolder,csvFile,longVer)
+function [] = NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces(datapath,abstractRunsFolder,realisticRunsFolder,multRunsSummaryDataFolder,longVer)
 
 % Anne S. Warlaumont
 %
@@ -8,22 +8,22 @@ function [] = NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces(ru
 
 % Specify where the simulation data are located:
 workspaceFolders = {};
-dirs = dir([runsFolder,'AbstractReady/run*']);
+dirs = dir([datapath,abstractRunsFolder,'/run*']);
 for run = 1:size(dirs,1)
-    workspaceFolders = [workspaceFolders;['AbstractReady/',dirs(run).name]];
+    workspaceFolders = [workspaceFolders;[abstractRunsFolder,'/',dirs(run).name]];
 end
-dirs = dir([runsFolder,'RealisticReady/run*']);
+dirs = dir([datapath,realisticRunsFolder,'/run*']);
 for run = 1:size(dirs,1)
-    workspaceFolders = [workspaceFolders;['RealisticReady/',dirs(run).name]];
+    workspaceFolders = [workspaceFolders;[realisticRunsFolder,'/',dirs(run).name]];
 end
 
 % Specify the number of generations to analyze:
 numgens = 500;
 
 % Open the file simulation summary information file for writing, for later analysis in R:
-fid2 = fopen(csvFile,'w');
+fid2 = fopen([datapath,multRunsSummaryDataFolder,'/multipleRunsData.csv'],'w');
 % Write column headers into that summary information file:
-fprintf(fid2,'runfolder,useVocalTract,mutationProbability,numIndividuals,generation,medProFitness,medPerFitness\n');
+fprintf(fid2,'runfolder',',useVocalTract,mutationProbability,numIndividuals,generation,medProFitness,medPerFitness\n');
 
 % Initialize the figure where median fitness values across generation will be plotted:
 medianTrajFig = figure('visible','off');
@@ -44,8 +44,8 @@ for run=1:size(workspaceFolders,1)
 	display(['run ',num2str(run),' of ',num2str(size(workspaceFolders,1))]);
     
     % Load the simulation's MATLAB workspace
-    load([runsFolder,char(workspaceFolders(run,1)),'/NeuralNetVocalControlEvolutionWorkspace.mat']);
-    display(['Loaded ',runsFolder,char(workspaceFolders(run,1)),'/NeuralNetVocalControlEvolutionWorkspace.mat']);
+    load([datapath,char(workspaceFolders(run,1)),'/NeuralNetVocalControlEvolutionWorkspace.mat']);
+    display(['Loaded ',char(workspaceFolders(run,1)),'/NeuralNetVocalControlEvolutionWorkspace.mat']);
     
     medianProdFitness = median(producerParentFitnessesDiary,1);
     medianProdFitnesses(run,:) = medianProdFitness(1,1:numgens);
@@ -68,11 +68,11 @@ for run=1:size(workspaceFolders,1)
     
     for signalNum=1:3
         temp = perceiverParentInputsDiary{numgens,signalNum};
-        save([runsFolder,char(workspaceFolders(run,1)),'/perceiverParentInputsDiary_gen',num2str(numgens),'_sig',num2str(signalNum),'.txt'],'temp','-ascii','-tabs');
+        save([datapath,char(workspaceFolders(run,1)),'/perceiverParentInputsDiary_gen',num2str(numgens),'_sig',num2str(signalNum),'.txt'],'temp','-ascii','-tabs');
     end
         
     for gencount=1:numgens
-        fprintf(fid2,[[runsFolder,char(workspaceFolders(run,1))],',',num2str(useVocalTract),',',num2str(mutationProbability),',',num2str(numIndividuals),',',num2str(gencount),',',num2str(median(producerParentFitnessesDiary(:,gencount))),',',num2str(median(perceiverParentFitnessesDiary(:,gencount))),'\n']);
+        fprintf(fid2,[[datapath,char(workspaceFolders(run,1))],',',num2str(useVocalTract),',',num2str(mutationProbability),',',num2str(numIndividuals),',',num2str(gencount),',',num2str(median(producerParentFitnessesDiary(:,gencount))),',',num2str(median(perceiverParentFitnessesDiary(:,gencount))),'\n']);
     end
     
     if longVer
@@ -91,11 +91,11 @@ for run=1:size(workspaceFolders,1)
                 for signalNum=1:3
                     muscleOutputsReshaped = reshape((producerParentOutputsDiary{savesiggen,1}(2*((producerParent-1)*3+signalNum),:)+1)/2,3,2);
                     caxisBounds = [0,1];
-                    muscleOutputsFilename = [runsFolder,char(workspaceFolders(run,1)),'/generation',num2str(savesiggen),'_producerParent',num2str(producerParent),'_fitRank',num2str(fitRank),'_vocalization',num2str(signalNum),'_muscleOutputs'];
+                    muscleOutputsFilename = [datapath,char(workspaceFolders(run,1)),'/generation',num2str(savesiggen),'_producerParent',num2str(producerParent),'_fitRank',num2str(fitRank),'_vocalization',num2str(signalNum),'_muscleOutputs'];
                     muscleOutputs_fig = figure('visible','off'); colormap(flipud(gray)); image(flipud(muscleOutputsReshaped),'CDataMapping','scaled'); caxis(caxisBounds); set (gca,'XTick',[]); set(gca,'YTick',[]); print(muscleOutputs_fig,'-dtiff',muscleOutputsFilename); close(muscleOutputs_fig);
                 end
                 saveSounds = 1;
-                [producerParentOutputsDiary,~,~,~,~] = getProducerParentSounds(producerParent,producerParentGenesDiary{savesiggen,1},numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,[runsFolder,char(workspaceFolders(run,1)),'/'],savesiggen,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenesDiary{savesiggen,1},numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds);
+                [producerParentOutputsDiary,~,~,~,~] = getProducerParentSounds(producerParent,producerParentGenesDiary{savesiggen,1},numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,[datapath,char(workspaceFolders(run,1)),'/'],savesiggen,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenesDiary{savesiggen,1},numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds);
             end
         end
         
@@ -104,8 +104,8 @@ for run=1:size(workspaceFolders,1)
         constantRankProGenes=[];
         constantRankPerGenes=[];
         constantRank = 50;
-        constantFitProGenesFilename = [runsFolder,char(workspaceFolders(run,1)),'/fitRank',num2str(constantRank),'_producergenes_gen1to',num2str(numgens),'.tif'];
-        constantFitPerGenesFilename = [runsFolder,char(workspaceFolders(run,1)),'/fitRank',num2str(constantRank),'_perceivergenes_gen1to',num2str(numgens),'.tif'];
+        constantFitProGenesFilename = [datapath,char(workspaceFolders(run,1)),'/fitRank',num2str(constantRank),'_producergenes_gen1to',num2str(numgens),'.tif'];
+        constantFitPerGenesFilename = [datapath,char(workspaceFolders(run,1)),'/fitRank',num2str(constantRank),'_perceivergenes_gen1to',num2str(numgens),'.tif'];
         % Producers:
         for generationcount=1:numgens
             [~,sortInd]=sort(producerParentFitnessesDiary(:,generationcount),'descend');
@@ -127,7 +127,7 @@ for run=1:size(workspaceFolders,1)
         
     end
     
-    clearvars -except runsFolder fid2 workspaceFolders mutationProbabilities mutationSDs medianFitnessAfters numgens medianTrajFig numUseVocalTract0 numUseVocalTract1 medianProdFitnesses medianPercFitnesses useVocalTracts numgens longVer
+    clearvars -except datapath multRunsSummaryDataFolder fid2 workspaceFolders mutationProbabilities mutationSDs medianFitnessAfters numgens medianTrajFig numUseVocalTract0 numUseVocalTract1 medianProdFitnesses medianPercFitnesses useVocalTracts numgens longVer
     
 end
 
@@ -139,9 +139,9 @@ subplot(2,2,1);
 title('Abstract');
 subplot(2,2,2);
 title('Realistic');
-print(medianTrajFig,'-depsc',[runsFolder,'fig_Medians.eps']); close(medianTrajFig);
+print(medianTrajFig,'-depsc',[datapath,multRunsSummaryDataFolder,'/','fig_Medians.eps']); close(medianTrajFig);
 
-save([runsFolder,'NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces.mat']);
+save([datapath,multRunsSummaryDataFolder,'/','NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces.mat']);
 
 % Make a figure that shows mean of the median fitness across different runs
 % TODO: Add confidence intervals (might be easier in R)
@@ -153,7 +153,7 @@ legend('Abstract','Embodied','Location','SouthEast'); legend('boxoff');
 subplot(2,1,2);
 plot(mean(medianPercFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Perceivers'); hold on;
 plot(mean(medianPercFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
-print('-depsc',[runsFolder,'fig_MeanOfMedian.eps']); close(fig_MeanOfMedian);
+print('-depsc',[datapath,multRunsSummaryDataFolder,'/','fig_MeanOfMedian.eps']); close(fig_MeanOfMedian);
 
 % Make a figure that shows SD of the median fitness across different runs
 fig_SDOfMedian = figure;
@@ -164,7 +164,7 @@ legend('Abstract','Embodied','Location','NorthEast'); legend('boxoff');
 subplot(2,1,2);
 plot(std(medianPercFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Receivers'); hold on;
 plot(std(medianPercFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
-print('-depsc',[runsFolder,'fig_SDOfMedian.eps']); close(fig_SDOfMedian);
+print('-depsc',[datapath,multRunsSummaryDataFolder,'/','fig_SDOfMedian.eps']); close(fig_SDOfMedian);
 
 % Make a figure that shows coefficient of variation of the median fitness across different runs
 fig_CoVOfMedian = figure;
@@ -175,5 +175,5 @@ legend('Abstract','Embodied','Location','NorthEast'); legend('boxoff');
 subplot(2,1,2);
 plot(std(medianPercFitnesses(find(useVocalTracts==0),:))./mean(medianPercFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Perceivers'); hold on;
 plot(std(medianPercFitnesses(find(useVocalTracts==1),:))./mean(medianPercFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
-print('-depsc',[runsFolder,'fig_CoVOfMedian.eps']); close(fig_CoVOfMedian);
+print('-depsc',[datapath,multRunsSummaryDataFolder,'/','fig_CoVOfMedian.eps']); close(fig_CoVOfMedian);
 

@@ -12,6 +12,8 @@ function [] = NeuralNetVocalControlEvolution(PraatDir,numIndividuals,numGenerati
 % NeuralNetVocalControlEvolution('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/ExtremeWeightsExp/run20140812_capWeights_1/',100,500,.05,0,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'capWeights',1)
 % NeuralNetVocalControlEvolution('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/ExtremeWeightsExp/run20140812_arbitraryFitness_1/',100,500,.05,0,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'arbitraryFitness',1)
 
+% NeuralNetVocalControlEvolution('/Users/awarlau/Downloads/noiseAmnt_1_run_1/',100,500,.05,1,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'noiseAmnt',1)
+
 p = inputParser;
 addRequired(p,'PraatDir');
 addRequired(p,'numIndividuals');
@@ -23,11 +25,15 @@ addRequired(p,'perceiverTargets');
 addParameter(p,'capWeights',0);
 addParameter(p,'arbitraryFitness',0);
 addParameter(p,'crossover',0);
+addParameter(p,'noiseAmnt',0);
+addParameter(p,'maxFreq',2000);
 parse(p,PraatDir,numIndividuals,numGenerations,mutationProbability,useVocalTract,producerInputs,perceiverTargets,varargin{:});
 
 capWeights = p.Results.capWeights;
 arbitraryFitness = p.Results.arbitraryFitness;
 crossover = p.Results.crossover;
+noiseAmnt = p.Results.noiseAmnt;
+maxFreq = p.Results.maxFreq;
 
 if ~exist(PraatDir, 'dir')
     mkdir(PraatDir);
@@ -35,10 +41,6 @@ end
 
 if exist([PraatDir,'NeuralNetVocalControlEvolutionWorkspace.mat']) == 0
     addpath(genpath('~/MATLABAdditionalToolboxes/'));
-    
-    % Navigate to the directory containing this script
-    myDir = '/Users/awarlau/NeuralNetVocalControlEvolution/';
-    cd(myDir);
     
     % Set simulation time and time step size paramenters:
     duration = .5;
@@ -72,6 +74,7 @@ if exist([PraatDir,'NeuralNetVocalControlEvolutionWorkspace.mat']) == 0
     perceiverParentFitnessesDiary = zeros(numIndividuals,numGenerations);
     parentSig1LoudnessDiary = zeros(numIndividuals,numGenerations);
     parentSig2LoudnessDiary = zeros(numIndividuals,numGenerations);
+    parentSig3LoudnessDiary = zeros(numIndividuals,numGenerations);
     parentSigDiffDiary = zeros(numIndividuals,numGenerations);
     producerParentGenesDiary = cell(numGenerations,1);
     perceiverParentGenesDiary = cell(numGenerations,1);
@@ -86,6 +89,7 @@ else
     perceiverParentFitnessesDiary = [perceiverParentFitnessesDiary,zeros(numIndividuals,numGenerations-generation)];
     parentSig1LoudnessDiary = [parentSig1LoudnessDiary,zeros(numIndividuals,numGenerations-generation)];
     parentSig2LoudnessDiary = [parentSig2LoudnessDiary,zeros(numIndividuals,numGenerations-generation)];
+	parentSig3LoudnessDiary = [parentSig3LoudnessDiary,zeros(numIndividuals,numGenerations-generation)];
     parentSigDiffDiary = [parentSigDiffDiary,zeros(numIndividuals,numGenerations-generation)];
     producerParentGenesDiary{numGenerations,1} = [];
     perceiverParentGenesDiary{numGenerations,1} = [];
@@ -98,10 +102,6 @@ end
 
 addpath(genpath('~/MATLABAdditionalToolboxes/'));
 
-% Navigate to the directory containing this script
-myDir = '/Users/awarlau/NeuralNetVocalControlEvolution/';
-cd(myDir);
-
 for generation = generation:numGenerations
     
     producerParentGenesDiary{generation} = producerParentGenes;
@@ -113,16 +113,16 @@ for generation = generation:numGenerations
     
     sig1Loudnesses = zeros(numIndividuals,1);
     sig2Loudnesses = zeros(numIndividuals,1);
-    sigDiffs = zeros(numIndividuals,1);
+	sig3Loudnesses = zeros(numIndividuals,1);
     
     for producerParent=1:numIndividuals
         
         saveSounds = 1;
-        [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds);
+        [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq);
         
         sig1Loudnesses(producerParent,1) = sum(sum(aspectra{1}));
         sig2Loudnesses(producerParent,1) = sum(sum(aspectra{2}));
-        sigDiffs(producerParent,1) = sqrt(sum(sum((aspectra{1}-aspectra{2}).^2)));
+		sig3Loudnesses(producerParent,1) = sum(sum(aspectra{3}));
         
     end
     
@@ -135,7 +135,7 @@ for generation = generation:numGenerations
     
     parentSig1LoudnessDiary(:,generation) = sig1Loudnesses;
     parentSig2LoudnessDiary(:,generation) = sig2Loudnesses;
-    parentSigDiffDiary(:,generation) = sigDiffs;
+	parentSig3LoudnessDiary(:,generation) = sig3Loudnesses;
     producerParentFitnessesDiary(:,generation) = producerParentFitnesses;
     perceiverParentFitnessesDiary(:,generation) = perceiverParentFitnesses;
     
@@ -238,7 +238,7 @@ for generation = generation:numGenerations
     subplot(1,5,2); plot(median(perceiverParentFitnessesDiary(:,1:maxGeneration))); xlabel('Generation');ylabel('Median perceiver fitness score');
     subplot(1,5,3); plot(median(parentSig1LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Median signal 1 loudness');
     subplot(1,5,4); plot(median(parentSig2LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Median signal 2 loudness');
-    subplot(1,5,5); plot(median(parentSigDiffDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Median signal difference');
+    subplot(1,5,5); plot(median(parentSig3LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Median signal 3 loudness');
     %set(myfig,'Units','inches');
     %set(myfig,'Position',[1,1,18,3]);
     set(myfig,'PaperPositionMode','manual');
@@ -253,7 +253,7 @@ for generation = generation:numGenerations
     subplot(1,5,2); plot(max(perceiverParentFitnessesDiary(:,1:maxGeneration))); xlabel('Generation');ylabel('Max perceiver fitness score');
     subplot(1,5,3); plot(max(parentSig1LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Max signal 1 loudness');
     subplot(1,5,4); plot(max(parentSig2LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Max signal 2 loudness');
-    subplot(1,5,5); plot(max(parentSigDiffDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Max signal difference');
+    subplot(1,5,5); plot(max(parentSig3LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Max signal 3 loudness');
     %set(myfig,'Units','inches');
     %set(myfig,'Position',[1,1,18,3]);
     set(myfig,'PaperPositionMode','manual');
@@ -268,7 +268,7 @@ for generation = generation:numGenerations
     subplot(1,5,2); plot(min(producerParentFitnessesDiary(:,1:maxGeneration))); xlabel('Generation');ylabel('Min perceiver fitness score');
     subplot(1,5,3); plot(min(parentSig1LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Min signal 1 loudness');
     subplot(1,5,4); plot(min(parentSig2LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Min signal 2 loudness');
-    subplot(1,5,5); plot(min(parentSigDiffDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Min signal difference');
+    subplot(1,5,5); plot(min(parentSig3LoudnessDiary(:,1:maxGeneration))); xlabel('Generation'); ylabel('Min signal 3 loudness');
     %set(myfig,'Units','inches');
     %set(myfig,'Position',[1,1,18,3]);
     set(myfig,'PaperPositionMode','manual');
