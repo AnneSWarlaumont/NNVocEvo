@@ -39,8 +39,10 @@ if ~exist(PraatDir, 'dir')
     mkdir(PraatDir);
 end
 
+addpath(genpath('rastamat'));
+addpath(genpath('randp'));
+
 if exist([PraatDir,'NeuralNetVocalControlEvolutionWorkspace.mat']) == 0
-    addpath(genpath('~/MATLABAdditionalToolboxes/'));
     
     % Set simulation time and time step size paramenters:
     duration = .5;
@@ -99,8 +101,6 @@ else
 	
 	generation = generation + 1;
 end
-
-addpath(genpath('~/MATLABAdditionalToolboxes/'));
 
 for generation = generation:numGenerations
     
