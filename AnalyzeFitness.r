@@ -12,9 +12,8 @@ library(lmerTest)
 
 # Change the directory as needed:
 #simdata = read.csv('~/Downloads/MultipleRunsData.csv',header=T)
-simdata = read.csv('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/MultipleRunsData.csv',header=T)
+simdata = read.csv('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/multRunsSummary_Ready/MultipleRunsData.csv',header=T)
 
-simdata$useVocalTract = as.factor(simdata$useVocalTract);
 simdata$medProFitnessScaled = scale(simdata$medProFitness)
 simdata$medPerFitnessScaled = scale(simdata$medPerFitness)
 simdata$generationScaled = scale(simdata$generation)

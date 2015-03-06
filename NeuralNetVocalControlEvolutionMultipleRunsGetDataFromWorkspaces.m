@@ -9,7 +9,7 @@ function [] = NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces(da
 % Specify where the simulation data are located:
 workspaceFolders = {};
 dirs = dir([datapath,abstractRunsFolder,'/run*']);
-for run = 1:size(dirs,1)
+for run = 1:size(dirs)
     workspaceFolders = [workspaceFolders;[abstractRunsFolder,'/',dirs(run).name]];
 end
 dirs = dir([datapath,realisticRunsFolder,'/run*']);
@@ -32,6 +32,7 @@ set(0,'defaultaxesfontsize',12);
 % Initialize counters for the number of Abstract (numUseVocalTract0) and Realistic (numUseVocalTract1) simulations
 numUseVocalTract0 = 0;
 numUseVocalTract1 = 0;
+numUseVocalTract1Noise = 0;
 
 % Initialize matrices that will store the median producer and perceiver fitnesses within each simulation at each generation, as well as a vector that will store whether each simulation used Abstract or Realistic signals
 medianProdFitnesses=NaN(size(workspaceFolders,1),numgens);
@@ -55,13 +56,13 @@ for run=1:size(workspaceFolders,1)
     
     if useVocalTract == 0
         numUseVocalTract0 = numUseVocalTract0 + 1;
-        subplot(2,2,1); hLine1 = plot(median(producerParentFitnessesDiary(:,1:numgens)),'Color',[.5,.5,.5],'LineWidth',1); xlabel('Generation'); ylabel('Median producer fitness score'); ylim([0,4]); hold on;
-        subplot(2,2,3); hLine2 = plot(median(perceiverParentFitnessesDiary(:,1:numgens)),'Color',[.5,.5,.5],'LineWidth',1); xlabel('Generation'); ylabel('Median perceiver fitness score'); ylim([0,4]); hold on;
+        subplot(2,2,1); hLine1 = plot(median(producerParentFitnessesDiary(:,1:numgens)),'Color',[.5,.5,.5],'LineWidth',1); xlabel('Generation'); ylabel('Median producer success'); ylim([0,4]); hold on;
+        subplot(2,2,3); hLine2 = plot(median(perceiverParentFitnessesDiary(:,1:numgens)),'Color',[.5,.5,.5],'LineWidth',1); xlabel('Generation'); ylabel('Median perceiver success'); ylim([0,4]); hold on;
     elseif useVocalTract == 1
         numUseVocalTract1 = numUseVocalTract1 + 1;
         figure(medianTrajFig);
-        subplot(2,2,2); hLine1 = plot(median(producerParentFitnessesDiary(:,1:numgens)),'Color','black','LineWidth',1); xlabel('Generation'); ylabel('Median producer fitness score'); ylim([0,4]); hold on;
-        subplot(2,2,4); hLine2 = plot(median(perceiverParentFitnessesDiary(:,1:numgens)),'Color','black','LineWidth',1); xlabel('Generation'); ylabel('Median perceiver fitness score'); ylim([0,4]); hold on;
+        subplot(2,2,2); hLine1 = plot(median(producerParentFitnessesDiary(:,1:numgens)),'Color','black','LineWidth',1); xlabel('Generation'); ylabel('Median producer success'); ylim([0,4]); hold on;
+        subplot(2,2,4); hLine2 = plot(median(perceiverParentFitnessesDiary(:,1:numgens)),'Color','black','LineWidth',1); xlabel('Generation'); ylabel('Median perceiver success'); ylim([0,4]); hold on;
     end
     
     % Save the individuals' spectrograms and waveforms, Praat scripts, and muscle outputs (where applicable).
@@ -95,7 +96,7 @@ for run=1:size(workspaceFolders,1)
                     muscleOutputs_fig = figure('visible','off'); colormap(flipud(gray)); image(flipud(muscleOutputsReshaped),'CDataMapping','scaled'); caxis(caxisBounds); set (gca,'XTick',[]); set(gca,'YTick',[]); print(muscleOutputs_fig,'-dtiff',muscleOutputsFilename); close(muscleOutputs_fig);
                 end
                 saveSounds = 1;
-                [producerParentOutputsDiary,~,~,~,~] = getProducerParentSounds(producerParent,producerParentGenesDiary{savesiggen,1},numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,[datapath,char(workspaceFolders(run,1)),'/'],savesiggen,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenesDiary{savesiggen,1},numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds);
+                [producerParentOutputsDiary,~,~,~,~] = getProducerParentSounds(producerParent,producerParentGenesDiary{savesiggen,1},numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,[datapath,char(workspaceFolders(run,1)),'/'],savesiggen,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenesDiary{savesiggen,1},numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq);
             end
         end
         
@@ -147,18 +148,18 @@ save([datapath,multRunsSummaryDataFolder,'/','NeuralNetVocalControlEvolutionMult
 % TODO: Add confidence intervals (might be easier in R)
 fig_MeanOfMedian = figure;
 subplot(2,1,1);
-plot(mean(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Mean median fitness score'); hold on;
+plot(mean(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Mean median communicative success'); hold on;
 plot(mean(medianProdFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
 legend('Abstract','Embodied','Location','SouthEast'); legend('boxoff');
 subplot(2,1,2);
-plot(mean(medianPercFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Perceivers'); hold on;
+plot(mean(medianPercFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Receivers'); hold on;
 plot(mean(medianPercFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
 print('-depsc',[datapath,multRunsSummaryDataFolder,'/','fig_MeanOfMedian.eps']); close(fig_MeanOfMedian);
 
 % Make a figure that shows SD of the median fitness across different runs
 fig_SDOfMedian = figure;
 subplot(2,1,1);
-plot(std(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Standard deviation of median fitness score'); hold on;
+plot(std(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Standard deviation of median communicative success'); hold on;
 plot(std(medianProdFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
 legend('Abstract','Embodied','Location','NorthEast'); legend('boxoff');
 subplot(2,1,2);
@@ -169,7 +170,7 @@ print('-depsc',[datapath,multRunsSummaryDataFolder,'/','fig_SDOfMedian.eps']); c
 % Make a figure that shows coefficient of variation of the median fitness across different runs
 fig_CoVOfMedian = figure;
 subplot(2,1,1);
-plot(std(medianProdFitnesses(find(useVocalTracts==0),:))./mean(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Coefficient of variation of median fitness score'); hold on;
+plot(std(medianProdFitnesses(find(useVocalTracts==0),:))./mean(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Coefficient of variation of median communicative success'); hold on;
 plot(std(medianProdFitnesses(find(useVocalTracts==1),:))./mean(medianProdFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
 legend('Abstract','Embodied','Location','NorthEast'); legend('boxoff');
 subplot(2,1,2);
