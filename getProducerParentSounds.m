@@ -1,14 +1,22 @@
-function [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq)
+function [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq,noNN)
 
 % Anne S. Warlaumont
 
 % get producer's connection weight values from its genome:
-producerNetWeightsIH = producerParentGenes(producerParent,1:numProducerNetInputs*numProducerNetHidden);
-producerNetWeightsHO = producerParentGenes(producerParent,((numProducerNetInputs*numProducerNetHidden)+1):((numProducerNetInputs*numProducerNetHidden)+(numProducerNetHidden*numProducerNetOutputs)));
+if ~noNN
+	producerNetWeightsIH = producerParentGenes(producerParent,1:numProducerNetInputs*numProducerNetHidden);
+	producerNetWeightsHO = producerParentGenes(producerParent,((numProducerNetInputs*numProducerNetHidden)+1):((numProducerNetInputs*numProducerNetHidden)+(numProducerNetHidden*numProducerNetOutputs)));
+else
+	producerNetWeightsIO = producerParentGenes(producerParent,:);
+end
 
 % transform weights from vectors into matrices:
-producerNetWeightsIH = reshape(producerNetWeightsIH,numProducerNetInputs,numProducerNetHidden);
-producerNetWeightsHO = reshape(producerNetWeightsHO,numProducerNetHidden,numProducerNetOutputs);
+if ~noNN
+	producerNetWeightsIH = reshape(producerNetWeightsIH,numProducerNetInputs,numProducerNetHidden);
+	producerNetWeightsHO = reshape(producerNetWeightsHO,numProducerNetHidden,numProducerNetOutputs);
+else
+	producerNetWeightsIO = reshape(producerNetWeightsIO,numProducerNetInputs,numProducerNetOutputs);
+end
 
 % Generate the producer's fixed signals
 for signalNum = 1:numSignals
@@ -35,10 +43,14 @@ for signalNum = 1:numSignals
     
     for time=0:timestep:duration
         
-        producerNetHidden = tanh(producerNetInputs*producerNetWeightsIH);
-        producerNetOutputs = satlins(producerNetHidden*producerNetWeightsHO);
+		if ~noNN
+	        producerNetHidden = tanh(producerNetInputs*producerNetWeightsIH);
+	        producerNetOutputs = satlins(producerNetHidden*producerNetWeightsHO);
+		else
+			producerNetOutputs = satlins(producerNetInputs*producerNetWeightsIO);
+		end
         producerParentOutputsDiary{generation,1}=[producerParentOutputsDiary{generation,1};producerNetOutputs];
-        
+					
         if useVocalTract
             fprintf(fid,['Set target... ',num2str(time,'%.3f'),' ',num2str(producerNetOutputs(1,1),'%.2f'),' Interarytenoid\n']);
             fprintf(fid,['Set target... ',num2str(time,'%.3f'),' ',num2str(producerNetOutputs(1,2),'%.2f'),' Cricothyroid\n']);
@@ -81,22 +93,30 @@ for signalNum = 1:numSignals
     for perceiverParent = 1:numIndividuals
         
         % get perceiver's connection weight values from its genome:
-        perceiverNetWeightsIH = perceiverParentGenes(perceiverParent,1:numPerceiverNetInputs*numPerceiverNetHidden);
-        perceiverNetWeightsHO = perceiverParentGenes(perceiverParent,((numPerceiverNetInputs*numPerceiverNetHidden)+1):((numPerceiverNetInputs*numPerceiverNetHidden)+(numPerceiverNetHidden*numPerceiverNetOutputs)));
+        if ~noNN
+			perceiverNetWeightsIH = perceiverParentGenes(perceiverParent,1:numPerceiverNetInputs*numPerceiverNetHidden);
+	        perceiverNetWeightsHO = perceiverParentGenes(perceiverParent,((numPerceiverNetInputs*numPerceiverNetHidden)+1):((numPerceiverNetInputs*numPerceiverNetHidden)+(numPerceiverNetHidden*numPerceiverNetOutputs)));
+		else
+			perceiverNetWeightsIO = perceiverParentGenes(perceiverParent,:);
+		end
         
         % transform weights from vectors into matrices:
-        perceiverNetWeightsIH = reshape(perceiverNetWeightsIH,numPerceiverNetInputs,numPerceiverNetHidden);
-        perceiverNetWeightsHO = reshape(perceiverNetWeightsHO,numPerceiverNetHidden,numPerceiverNetOutputs);
-        
-        % randomly decide the timestep when the vocalization should start
-        % startTimeBin = round(rand*size(aspectra{signalNum},2));
-        startTimeBin = 0;
-        
+        if ~noNN
+			perceiverNetWeightsIH = reshape(perceiverNetWeightsIH,numPerceiverNetInputs,numPerceiverNetHidden);
+	        perceiverNetWeightsHO = reshape(perceiverNetWeightsHO,numPerceiverNetHidden,numPerceiverNetOutputs);
+		else
+			perceiverNetWeightsIO = reshape(perceiverNetWeightsIO,numPerceiverNetInputs,numPerceiverNetOutputs);
+		end
+		
         % Get this perceiver parent's outputs:
         perceiverNetInputs = reshape(aspectra{signalNum},size(aspectra{signalNum},1)*size(aspectra{signalNum},2),1)+noiseAmnt*rand(size(aspectra{signalNum},1)*size(aspectra{signalNum},2),1);
         perceiverTarget = perceiverTargets(signalNum,:);
-        perceiverNetHidden = tanh(perceiverNetInputs'*perceiverNetWeightsIH);
-        perceiverNetOutput = satlin(perceiverNetHidden*perceiverNetWeightsHO);
+        if ~noNN
+			perceiverNetHidden = tanh(perceiverNetInputs'*perceiverNetWeightsIH);
+	        perceiverNetOutput = satlin(perceiverNetHidden*perceiverNetWeightsHO);
+		else
+			perceiverNetOutput = satlin(perceiverNetInputs'*perceiverNetWeightsIO);
+		end
         perceiverParentOutputsDiary{generation,1} = [perceiverParentOutputsDiary{generation,1};perceiverNetOutput];
         perceiverParentInputsDiary{generation,signalNum} = [perceiverParentInputsDiary{generation,signalNum};perceiverNetInputs'];
         % perceiverParentCorrectness(perceiverParent,producerParent) = perceiverParentCorrectness(perceiverParent,producerParent) + 1/((sqrt(sum((perceiverNetOutput-perceiverTarget).^2)))+1);

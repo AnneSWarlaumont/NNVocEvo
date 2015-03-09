@@ -14,6 +14,8 @@ function [] = NeuralNetVocalControlEvolution(PraatDir,numIndividuals,numGenerati
 
 % NeuralNetVocalControlEvolution('/Users/awarlau/Downloads/noiseAmnt_1_run_1/',100,500,.05,1,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'noiseAmnt',1)
 
+% NeuralNetVocalControlEvolution('/Users/awarlau/Downloads/noiseAmnt_1_maxFreq_500_noNN_1_run_1/',50,500,.05,1,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'noiseAmnt',1,'maxFreq',500,'noNN',1)
+
 p = inputParser;
 addRequired(p,'PraatDir');
 addRequired(p,'numIndividuals');
@@ -27,6 +29,7 @@ addParameter(p,'arbitraryFitness',0);
 addParameter(p,'crossover',0);
 addParameter(p,'noiseAmnt',0);
 addParameter(p,'maxFreq',2000);
+addParameter(p,'noNN',0)
 parse(p,PraatDir,numIndividuals,numGenerations,mutationProbability,useVocalTract,producerInputs,perceiverTargets,varargin{:});
 
 capWeights = p.Results.capWeights;
@@ -34,6 +37,7 @@ arbitraryFitness = p.Results.arbitraryFitness;
 crossover = p.Results.crossover;
 noiseAmnt = p.Results.noiseAmnt;
 maxFreq = p.Results.maxFreq;
+noNN = p.Results.noNN;
 
 if ~exist(PraatDir, 'dir')
     mkdir(PraatDir);
@@ -56,17 +60,31 @@ if exist([PraatDir,'NeuralNetVocalControlEvolutionWorkspace.mat']) == 0
     
     numProducerNetOutputs = 6; % This is the number of muscles
     numProducerNetInputs = size(producerInputs,2);
-    numProducerNetHidden = 3; % This is chosen rather arbitrarily
+	if ~noNN
+		numProducerNetHidden = 3; % This is chosen rather arbitrarily
+	else
+		numProducerNetHidden = 0;
+	end
     
     numPerceiverNetInputs = melfcc_nbands*2; % This will have to be changed to the correct value, which is the number of pixels in each spectrogram.
     numPerceiverNetOutputs = size(producerInputs,2);
-    numPerceiverNetHidden = 3; % This is chosen rather arbitrarily
+	if ~noNN
+ 		numPerceiverNetHidden = 3; % This is chosen rather arbitrarily
+	else
+		numPerceiverNetHidden = 0;
+	   
+    end
     
     % numGenes = # of input to hidden weights, # of context to hidden weights,
     % # of hidden to output weights, # of bias to hidden weights, # of bias to
     % output weights
-    numProducerGenes = (numProducerNetInputs*numProducerNetHidden)+(numProducerNetHidden*numProducerNetOutputs);
-    numPerceiverGenes = (numPerceiverNetInputs*numPerceiverNetHidden)+(numPerceiverNetHidden*numPerceiverNetOutputs);
+    if ~noNN
+		numProducerGenes = (numProducerNetInputs*numProducerNetHidden)+(numProducerNetHidden*numProducerNetOutputs);
+	    numPerceiverGenes = (numPerceiverNetInputs*numPerceiverNetHidden)+(numPerceiverNetHidden*numPerceiverNetOutputs);
+	else
+		numProducerGenes = numProducerNetInputs*numProducerNetOutputs;
+		numPerceiverGenes = numPerceiverNetInputs*numPerceiverNetOutputs;
+	end
     
     % Randomly initialize parent genes
     producerParentGenes = rand(numIndividuals,numProducerGenes)*2-1;
@@ -118,7 +136,7 @@ for generation = generation:numGenerations
     for producerParent=1:numIndividuals
         
         saveSounds = 1;
-        [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq);
+        [producerParentOutputsDiary,aspectra,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness] = getProducerParentSounds(producerParent,producerParentGenes,numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,PraatDir,generation,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenes,numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq,noNN);
         
         sig1Loudnesses(producerParent,1) = sum(sum(aspectra{1}));
         sig2Loudnesses(producerParent,1) = sum(sum(aspectra{2}));
