@@ -1,5 +1,7 @@
 function [areLoud,loudMusc,quietMusc] = loudMuscVals(runDir,generation,thresh)
 
+addpath('rotateXLabels');
+
 workspaceFile = strcat(runDir,'NeuralNetVocalControlEvolutionWorkspace.mat');
 load(workspaceFile,'numIndividuals','parentSig1LoudnessDiary','parentSig2LoudnessDiary','parentSig3LoudnessDiary','producerParentOutputsDiary');
 loudnesses = [parentSig1LoudnessDiary(:,generation); parentSig2LoudnessDiary(:,generation); parentSig3LoudnessDiary(:,generation)];

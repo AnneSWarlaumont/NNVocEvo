@@ -6,6 +6,8 @@ function [] = NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces(da
 % NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces('/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/','/Volumes/Storage/NeuralNetVocalControlEvolutionRuns/MultipleRunsData.csv',1)
 % Set longVer to plot detailed muscle and signal vectors, save the sounds of those signals, and plot genes as they change over time. This will take a lot longer to run.
 
+addpath(genpath('rastamat'));
+
 % Specify where the simulation data are located:
 workspaceFolders = {};
 dirs = dir([datapath,abstractRunsFolder,'/run*']);
@@ -96,7 +98,7 @@ for run=1:size(workspaceFolders,1)
                     muscleOutputs_fig = figure('visible','off'); colormap(flipud(gray)); image(flipud(muscleOutputsReshaped),'CDataMapping','scaled'); caxis(caxisBounds); set (gca,'XTick',[]); set(gca,'YTick',[]); print(muscleOutputs_fig,'-dtiff',muscleOutputsFilename); close(muscleOutputs_fig);
                 end
                 saveSounds = 1;
-                [producerParentOutputsDiary,~,~,~,~] = getProducerParentSounds(producerParent,producerParentGenesDiary{savesiggen,1},numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,[datapath,char(workspaceFolders(run,1)),'/'],savesiggen,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenesDiary{savesiggen,1},numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq);
+                [producerParentOutputsDiary,~,~,~,~] = getProducerParentSounds(producerParent,producerParentGenesDiary{savesiggen,1},numProducerNetInputs,numProducerNetHidden,numProducerNetOutputs,numSignals,producerInputs,[datapath,char(workspaceFolders(run,1)),'/'],savesiggen,useVocalTract,timestep,duration,producerParentOutputsDiary,melfcc_wintime,melfcc_nbands,melfcc_hoptime,numIndividuals,perceiverParentGenesDiary{savesiggen,1},numPerceiverNetInputs,numPerceiverNetHidden,numPerceiverNetOutputs,perceiverTargets,perceiverParentOutputsDiary,perceiverParentInputsDiary,perceiverParentCorrectness,saveSounds,noiseAmnt,maxFreq,noNN);
             end
         end
         
@@ -148,7 +150,7 @@ save([datapath,multRunsSummaryDataFolder,'/','NeuralNetVocalControlEvolutionMult
 % TODO: Add confidence intervals (might be easier in R)
 fig_MeanOfMedian = figure;
 subplot(2,1,1);
-plot(mean(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Mean median communicative success'); hold on;
+plot(mean(medianProdFitnesses(find(useVocalTracts==0),:)),'Color',[.5,.5,.5]); xlabel('Generation'); ylabel('Producers'); title('Average median communicative success'); hold on;
 plot(mean(medianProdFitnesses(find(useVocalTracts==1),:)),'Color','black'); hold on;
 legend('Abstract','Embodied','Location','SouthEast'); legend('boxoff');
 subplot(2,1,2);

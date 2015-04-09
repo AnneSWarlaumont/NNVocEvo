@@ -16,6 +16,8 @@ function [] = NeuralNetVocalControlEvolution(PraatDir,numIndividuals,numGenerati
 
 % NeuralNetVocalControlEvolution('/Users/awarlau/Downloads/noiseAmnt_1_maxFreq_500_noNN_1_run_1/',50,500,.05,1,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'noiseAmnt',1,'maxFreq',500,'noNN',1)
 
+% NeuralNetVocalControlEvolution('/Users/awarlau/Downloads/noiseAmnt_Pt001_nInd_50/',50,500,.05,1,[1,0,0;0,1,0;0,0,1],[1,0,0;0,1,0;0,0,1],'noiseAmnt',.001)
+
 p = inputParser;
 addRequired(p,'PraatDir');
 addRequired(p,'numIndividuals');
