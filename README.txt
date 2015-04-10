@@ -10,6 +10,7 @@ NeuralNetVocalControlEvolutionMultipleRunsGetDataFromWorkspaces.m
 genesOverTime.m
 landscape.m
 wavefigs.m
+loudMuscVals.m
 AnalyzeFitness.r
 AnalyzeSignalDistances.r
 
